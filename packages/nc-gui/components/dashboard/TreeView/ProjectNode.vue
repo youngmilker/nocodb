@@ -359,6 +359,8 @@ const DlgProjectDuplicateOnOk = async (jobData: { id: string; project_id: string
   })
 
   $e('a:project:duplicate')
+
+  console.log('OSS')
 }
 </script>
 
