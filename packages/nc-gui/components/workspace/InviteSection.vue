@@ -26,83 +26,6 @@ const { workspaceRoles } = useRoles()
 
 // all user input emails are stored here
 const emailBadges = ref<Array<string>>([])
-
-const insertOrUpdateString = (str: string) => {
-  // Check if the string already exists in the array
-  const index = emailBadges.value.indexOf(str)
-
-  if (index !== -1) {
-    // If the string exists, remove it
-    emailBadges.value.splice(index, 1)
-  }
-
-  // Add the new string to the array
-  emailBadges.value.push(str)
-}
-
-const emailInputValidation = (input: string): boolean => {
-  if (!input.length) {
-    emailValidation.isError = true
-    emailValidation.message = 'Email Should Not Be Empty'
-    return false
-  }
-  if (!validateEmail(input.trim())) {
-    emailValidation.isError = true
-    emailValidation.message = 'Invalid Email'
-    return false
-  }
-  return true
-}
-
-watch(inviteData, (newVal) => {
-  const isNewEmail = newVal.email.charAt(newVal.email.length - 1) === ',' || newVal.email.charAt(newVal.email.length - 1) === ' '
-  if (isNewEmail && newVal.email.trim().length) {
-    const emailToAdd = newVal.email.split(',')[0].trim() || newVal.email.split(' ')[0].trim()
-    if (!validateEmail(emailToAdd)) {
-      emailValidation.isError = true
-      emailValidation.message = 'Invalid Email'
-      return
-    }
-    /** 
-     if email is already enterd we delete the already
-     existing email and add new one
-     **/
-    if (emailBadges.value.includes(emailToAdd)) {
-      insertOrUpdateString(emailToAdd)
-      inviteData.email = ''
-      return
-    }
-    emailBadges.value.push(emailToAdd)
-    inviteData.email = ''
-  }
-  if (!newVal.email.length && emailValidation.isError) {
-    emailValidation.isError = false
-  }
-})
-
-const handleEnter = () => {
-  const isEmailIsValid = emailInputValidation(inviteData.email)
-  if (!isEmailIsValid) return
-
-  inviteData.email += ' '
-  emailValidation.isError = false
-  emailValidation.message = ''
-}
-
-const inviteCollaborator = async () => {
-  try {
-    const payloadData = emailBadges.value.join(',')
-
-    await _inviteCollaborator(payloadData, inviteData.roles)
-    message.success('Invitation sent successfully')
-    inviteData.email = ''
-    emailBadges.value = []
-  } catch (e: any) {
-    message.error(await extractSdkResponseErrorMsg(e))
-  }
-}
-// all user input emails are stored here
-const emailBadges = ref<Array<string>>([])
 watch(inviteData, (newVal) => {
   if (newVal.email.includes(',')) {
     emailBadges.value.push(newVal.email.split(',')[0])
@@ -110,6 +33,22 @@ watch(inviteData, (newVal) => {
   }
 })
 
+const inviteCollaborator = async () => {
+  try {
+    let inviteEmails = ''
+    emailBadges.value.forEach((el) => {
+      inviteEmails += `${el},`
+    })
+
+    await _inviteCollaborator(inviteEmails, inviteData.roles)
+    message.success('Invitation sent successfully')
+  } catch (e: any) {
+    message.error(await extractSdkResponseErrorMsg(e))
+  } finally {
+    inviteData.email = ''
+    emailBadges.value = []
+  }
+}
 // allow only lower roles to be assigned
 const allowedRoles = ref<WorkspaceUserRoles[]>([])
 
@@ -173,6 +112,13 @@ const onPaste = (e: ClipboardEvent) => {
     <div class="text-xl mb-4">Invite</div>
     <a-form>
       <div class="flex gap-2">
+        <a-input
+          id="email"
+          v-model:value="inviteData.email"
+          placeholder="Enter emails to send invitation"
+          class="!max-w-130 !rounded"
+          @press-enter="inviteData.email += ','"
+        />
         <span
           v-for="(email, index) in emailBadges"
           :key="email"
@@ -181,26 +127,23 @@ const onPaste = (e: ClipboardEvent) => {
           {{ email }}
           <component :is="iconMap.close" class="ml-1.5 hover:cursor-pointer" @click="emailBadges.splice(index, 1)" />
         </span>
-        <a-input
-          id="email"
-          v-model:value="inviteData.email"
-          placeholder="Enter emails to send invitation"
-          class="!max-w-130 !rounded"
-          @press-enter="inviteData.email += ','"
-        />
+        <NcSelect v-model:value="inviteData.roles" class="min-w-30 !rounded px-1" data-testid="roles">
+          <template #suffixIcon>
+            <MdiChevronDown />
+          </template>
+          <template v-for="role of allowedRoles" :key="`role-option-${role}`">
+            <a-select-option v-if="role" :value="role">
+              <NcBadge :color="RoleColors[role]">
+                <p class="badge-text">{{ RoleLabels[role] }}</p>
+              </NcBadge>
+            </a-select-option>
+          </template>
+        </NcSelect>
 
-        <RolesSelector
-          class="px-1"
-          :role="inviteData.roles"
-          :roles="allowedRoles"
-          :on-role-change="(role: WorkspaceUserRoles) => (inviteData.roles = role)"
-          :description="true"
-        />
-
-        <a-button
+        <NcButton
           type="primary"
-          class="!rounded-md"
-          :disabled="!inviteData.email?.length || isInvitingCollaborators"
+          :disabled="!emailBadges.length || isInvitingCollaborators"
+          size="small"
           @click="inviteCollaborator"
         >
           <div class="flex flex-row items-center gap-x-2 pr-1">
@@ -208,7 +151,7 @@ const onPaste = (e: ClipboardEvent) => {
             <MdiPlus v-else />
             {{ isInvitingCollaborators ? 'Adding' : 'Add' }} User(s)
           </div>
-        </a-button>
+        </NcButton>
       </div>
       <RolesSelector
         size="md"
