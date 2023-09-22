@@ -174,31 +174,12 @@ const onPaste = (e: ClipboardEvent) => {
           @click="focusOnDiv"
           @blur="isDivFocused = false"
         >
-          <span
-            v-for="(email, index) in emailBadges"
-            :key="email"
-            class="leading-4 border-1 text-brand-500 bg-brand-50 rounded-md ml-1 p-0.5"
-          >
-            {{ email }}
-            <component
-              :is="iconMap.close"
-              class="ml-0.5 hover:cursor-pointer w-3.5 h-3.5"
-              @click="emailBadges.splice(index, 1)"
-            />
-          </span>
-          <input
-            id="email"
-            ref="focusRef"
-            v-model="inviteData.email"
-            :placeholder="emailBadges.length < 1 ? 'Enter emails to send invitation' : ''"
-            class="min-w-50 outline-0 ml-2 mr-3"
-            data-testid="email-input"
-            @keyup.enter="handleEnter"
-            @blur="isDivFocused = false"
-            @paste.prevent="onPaste"
-          />
-        </div>
-        <span v-if="emailValidation.isError" class="ml-2 text-red-500 text-[10px] mt-1.5">{{ emailValidation.message }}</span>
+          <div class="flex flex-row items-center gap-x-2 pr-1">
+            <GeneralLoader v-if="isInvitingCollaborators" class="flex" />
+            <MdiPlus v-else />
+            {{ isInvitingCollaborators ? 'Adding' : 'Add' }} User(s)
+          </div>
+        </a-button>
       </div>
       <RolesSelector
         size="md"
