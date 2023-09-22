@@ -14,7 +14,7 @@ const props = withDefaults(
 
 <template>
   <div
-    class="rounded-md px-1"
+    class="rounded-md px-1 flex items-center"
     :class="{
       'border-purple-500 bg-purple-100': props.color === 'purple',
       'border-blue-500 bg-blue-100': props.color === 'blue',

@@ -25,8 +25,8 @@ const sizeRef = toRef(props, 'size')
 </script>
 
 <template>
-  <NcDropdown>
-    <RolesBadge data-testid="roles" :role="roleRef" :inherit="inheritRef === role" clickable />
+  <NcDropdown size="lg" class="nc-roles-selector">
+    <RolesBadge data-testid="roles" :role="roleRef" :inherit="inheritRef === role" clickable :size="sizeRef" />
     <template #overlay>
       <div class="nc-role-select-dropdown flex flex-col gap-1 p-2">
         <div class="flex flex-col gap-1">
