@@ -25,38 +25,25 @@ const validateEmail = (email: string): boolean => {
 
 // all user input emails are stored here
 const emailBadges = ref<Array<string>>([])
-
-const insertOrUpdateString = (str: string) => {
-  // Check if the string already exists in the array
-  const index = emailBadges.value.indexOf(str)
-
-  if (index !== -1) {
-    // If the string exists, remove it
-    emailBadges.value.splice(index, 1)
-  }
-
-  // Add the new string to the array
-  emailBadges.value.push(str)
-}
-
 watch(inviteData, (newVal) => {
-  const isNewEmail = newVal.email.charAt(newVal.email.length - 1) === ',' || newVal.email.charAt(newVal.email.length - 1) === ' '
-  if (isNewEmail && newVal.email.trim().length > 1) {
-    const emailToAdd = newVal.email.split(',')[0].trim() || newVal.email.split(' ')[0].trim()
-    if (!validateEmail(emailToAdd)) {
+  if (newVal.email.includes(',')) {
+    if (inviteData.email.length < 1) {
       emailValidation.isError = true
-      emailValidation.message = 'INVALID EMAIL'
+      emailValidation.message = 'email should not be empty'
       return
     }
-    /** 
-     if email is already enterd we delete the already
-     existing email and add new one
-     **/
-    if (emailBadges.value.includes(emailToAdd)) {
-      insertOrUpdateString(emailToAdd)
+    if (!validateEmail(inviteData.email.trim())) {
+      emailValidation.isError = true
+      emailValidation.message = 'invalid email'
+      return
+    }
+    // if email is already enterd we just ignore the input
+    // no error is thrown
+    if (emailBadges.value.includes(newVal.email.split(',')[0])) {
       inviteData.email = ''
       return
     }
+    const emailToAdd = newVal.email.split(',')[0].trim()
     emailBadges.value.push(emailToAdd)
     inviteData.email = ''
   }
@@ -68,15 +55,15 @@ watch(inviteData, (newVal) => {
 const handleEnter = () => {
   if (inviteData.email.length < 1) {
     emailValidation.isError = true
-    emailValidation.message = 'EMAIL SHOULD NOT BE EMPTY'
+    emailValidation.message = 'email should not be empty'
     return
   }
   if (!validateEmail(inviteData.email.trim())) {
     emailValidation.isError = true
-    emailValidation.message = 'INVALID EMAIL'
+    emailValidation.message = 'invalid email'
     return
   }
-  inviteData.email += ' '
+  inviteData.email += ','
   emailValidation.isError = false
   emailValidation.message = ''
 }
@@ -177,41 +164,6 @@ onKeyStroke('Backspace', () => {
     emailBadges.value.pop()
   }
 })
-
-// when bulk email is pasted
-const onPaste = (e: ClipboardEvent) => {
-  const pastedText = e.clipboardData?.getData('text')
-  const inputArray = pastedText?.split(',') || pastedText?.split(' ')
-  // if data is pasted to a already existing text in input
-  // we add existingInput + pasted data
-  if (inputArray?.length === 1 && inviteData.email.length > 1) {
-    inputArray[0] = inviteData.email += inputArray[0]
-  }
-  inputArray?.forEach((el) => {
-    if (el.length < 1) {
-      emailValidation.isError = true
-      emailValidation.message = 'EMAIL SHOULD NOT BE EMPTY'
-      return
-    }
-    if (!validateEmail(el.trim())) {
-      emailValidation.isError = true
-      emailValidation.message = 'INVALID EMAIL'
-      return
-    }
-    /** 
-     if email is already enterd we delete the already
-     existing email and add new one
-     **/
-    if (emailBadges.value.includes(el)) {
-      insertOrUpdateString(el)
-      return
-    }
-
-    emailBadges.value.push(el)
-    inviteData.email = ''
-  })
-  inviteData.email = ''
-}
 </script>
 
 <template>
@@ -274,7 +226,7 @@ const onPaste = (e: ClipboardEvent) => {
               <span
                 v-for="(email, index) in emailBadges"
                 :key="email"
-                class="text-[14px] border-1 text-brand-500 bg-brand-50 rounded-md ml-1 p-0.5"
+                class="text-[14px] border-1 text-brand-500 bg-brand-50 rounded-md ml-1 mt-1 p-0.5"
               >
                 {{ email }}
                 <component
@@ -288,10 +240,9 @@ const onPaste = (e: ClipboardEvent) => {
                 ref="focusRef"
                 v-model="inviteData.email"
                 :placeholder="emailBadges.length < 1 ? 'Enter emails to send invitation' : ''"
-                class="min-w-50 !outline-0 !focus:outline-0 ml-2 mr-3"
+                class="min-w-50 !outline-0 !focus:outline-0 ml-2 mr-3 mt-1"
                 data-testid="email-input"
                 @keyup.enter="handleEnter"
-                @paste.prevent="onPaste"
                 @blur="isDivFocused = false"
               />
             </div>

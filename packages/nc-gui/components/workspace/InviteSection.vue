@@ -37,7 +37,7 @@ watch(inviteData, (newVal) => {
       emailValidation.message = 'email should not be empty'
       return
     }
-    if (!validateEmail(inviteData.email)) {
+    if (!validateEmail(inviteData.email.trim())) {
       emailValidation.isError = true
       emailValidation.message = 'invalid email'
       return
@@ -48,7 +48,8 @@ watch(inviteData, (newVal) => {
       inviteData.email = ''
       return
     }
-    emailBadges.value.push(newVal.email.split(',')[0])
+    const emailToAdd = newVal.email.split(',')[0].trim()
+    emailBadges.value.push(emailToAdd)
     inviteData.email = ''
   }
   if (newVal.email.length < 1 && emailValidation.isError) {
@@ -62,7 +63,7 @@ const handleEnter = () => {
     emailValidation.message = 'email should not be empty'
     return
   }
-  if (!validateEmail(inviteData.email)) {
+  if (!validateEmail(inviteData.email.trim())) {
     emailValidation.isError = true
     emailValidation.message = 'invalid email'
     return
@@ -128,7 +129,7 @@ onKeyStroke('Backspace', () => {
       <div class="flex flex-col">
         <div
           ref="divRef"
-          class="flex w-130 border-1 gap-1 items-center rounded-lg nc-scrollbar-x-md flex-wrap max-h-30 overflow-y-scroll"
+          class="flex w-130 border-1 gap-1 items-center flex-wrap min-h-8 max-h-30 overflow-y-scroll rounded-lg nc-scrollbar-md"
           tabindex="0"
           :class="{
             'border-primary/100': isDivFocused,
