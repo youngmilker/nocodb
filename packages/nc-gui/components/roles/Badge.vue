@@ -20,7 +20,6 @@ const props = withDefaults(
 
 const roleRef = toRef(props, 'role')
 const clickableRef = toRef(props, 'clickable')
-const borderRef = toRef(props, 'border')
 
 const sizeSelect = computed(() => props.size)
 
@@ -41,14 +40,14 @@ const roleProperties = computed(() => {
 
 <template>
   <div
-    class="flex items-start"
+    class="flex items-center"
     :class="{
       'cursor-pointer': clickableRef,
     }"
   >
-    <NcBadge class="!px-2" :color="roleProperties.color" :border="borderRef" :size="sizeSelect">
+    <NcBadge class="!px-2" :color="roleProperties.color" :border="borderRef">
       <div
-        class="badge-text flex items-center gap-2"
+        class="badge-text flex items-center gap-2 !h-7"
         :class="{
           'text-purple-500': roleProperties.color === 'purple',
           'text-blue-500': roleProperties.color === 'blue',
