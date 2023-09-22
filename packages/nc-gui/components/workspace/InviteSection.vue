@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { onKeyStroke } from '@vueuse/core'
-import { OrderedWorkspaceRoles, WorkspaceUserRoles } from 'nocodb-sdk'
+import { OrderedWorkspaceRoles, RoleColors, RoleLabels, WorkspaceUserRoles } from 'nocodb-sdk'
 import { extractSdkResponseErrorMsg, useWorkspace } from '#imports'
 import { validateEmail } from '~/utils/validation'
 
@@ -40,12 +40,6 @@ watch(inviteData, (newVal) => {
   }
 })
 
-const scrollToEnd = () => {
-  if (divRef.value) {
-    divRef.value.scrollLeft = divRef.value.scrollWidth
-  }
-}
-
 const handleEnter = () => {
   if (inviteData.email.length < 1) {
     emailValidation.isError = true
@@ -60,7 +54,6 @@ const handleEnter = () => {
   inviteData.email += ','
   emailValidation.isError = false
   emailValidation.message = ''
-  scrollToEnd()
 }
 
 const inviteCollaborator = async () => {
@@ -99,46 +92,12 @@ onMounted(async () => {
   }
 })
 
-const focusOnDiv = () => {
-  focusRef.value?.focus()
-  isDivFocused.value = true
-}
-
 // remove one email per backspace
 onKeyStroke('Backspace', () => {
   if (isDivFocused.value && inviteData.email.length < 1) {
     emailBadges.value.pop()
   }
 })
-
-// when bulk email is pasted
-const onPaste = (e: ClipboardEvent) => {
-  const pastedText = e.clipboardData?.getData('text')
-  const inputArray = pastedText?.split(',') || pastedText?.split(' ')
-  // if data is pasted to a already existing text in input
-  // we add existingInput + pasted data
-  if (inputArray?.length === 1 && inviteData.email.length > 1) {
-    inputArray[0] = inviteData.email += inputArray[0]
-  }
-  inputArray?.forEach((el) => {
-    const isEmailIsValid = emailInputValidation(el)
-
-    if (!isEmailIsValid) return
-
-    /** 
-     if email is already enterd we delete the already
-     existing email and add new one
-     **/
-    if (emailBadges.value.includes(el)) {
-      insertOrUpdateString(el)
-      return
-    }
-
-    emailBadges.value.push(el)
-    inviteData.email = ''
-  })
-  inviteData.email = ''
-}
 </script>
 
 <template>
@@ -148,10 +107,11 @@ const onPaste = (e: ClipboardEvent) => {
       <div class="flex flex-col">
         <div
           ref="divRef"
-          class="flex w-130 gap-1 overflow-x-scroll border-1 border-blue items-center rounded-lg nc-scrollbar-x-md"
+          class="flex w-130 border-1 gap-1 items-center rounded-lg nc-scrollbar-x-md flex-wrap"
           tabindex="0"
           :class="{
-            'border-[#3366FF]': isDivFocused,
+            'border-primary/100': isDivFocused,
+            'p-1': emailBadges.length > 1,
           }"
           @click="
             () => {
@@ -164,21 +124,22 @@ const onPaste = (e: ClipboardEvent) => {
           <span
             v-for="(email, index) in emailBadges"
             :key="email"
-            class="text-[14px] p-0.2 border-1 color-[#4A5268] bg-[#E7E7E9] rounded-md flex items-center justify-between ml-1 mt-1"
+            class="text-[14px] border-1 text-primary/500 bg-primary/100 rounded-md ml-1 mt-1 p-0.5"
           >
             {{ email }}
-            <component :is="iconMap.close" class="ml-1.5 hover:cursor-pointer" @click="emailBadges.splice(index, 1)" />
+            <component :is="iconMap.close" class="ml-0.5 hover:cursor-pointer w-4 h-4" @click="emailBadges.splice(index, 1)" />
           </span>
           <input
             id="email"
             ref="focusRef"
             v-model="inviteData.email"
             :placeholder="emailBadges.length < 1 ? 'Enter emails to send invitation' : ''"
-            class="min-w-30 !focus:border-none !outline-0 !focus:outline-0 !bg-[white] ml-2 mr-3 w-full mt-1"
+            class="min-w-50 !outline-0 !focus:outline-0 ml-2 mr-3 mt-1"
             @keyup.enter="handleEnter"
+            @blur="isDivFocused = false"
           />
         </div>
-        <span v-if="emailValidation.isError" class="ml-2 text-[red] text-[12px] mt-1">{{ emailValidation.message }}</span>
+        <span v-if="emailValidation.isError" class="ml-2 text-red/100 text-[12px] mt-1">{{ emailValidation.message }}</span>
       </div>
       <NcSelect v-model:value="inviteData.roles" class="min-w-30 !rounded px-1" data-testid="roles">
         <template #suffixIcon>
