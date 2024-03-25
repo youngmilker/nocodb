@@ -119,6 +119,16 @@ export default class MapViewColumn {
       'group_by_order',
       'group_by_sort',
     ]);
+
+    // set meta
+    const res = await ncMeta.metaUpdate(
+      null,
+      null,
+      MetaTable.MAP_VIEW_COLUMNS,
+      updateObj,
+      columnId,
+    );
+
     // get existing cache
     const key = `${CacheScope.MAP_VIEW_COLUMN}:${columnId}`;
     let o = await NocoCache.get(key, CacheGetType.TYPE_OBJECT);
@@ -128,14 +138,6 @@ export default class MapViewColumn {
       // set cache
       await NocoCache.set(key, o);
     }
-    // set meta
-    const res = await ncMeta.metaUpdate(
-      null,
-      null,
-      MetaTable.MAP_VIEW_COLUMNS,
-      updateObj,
-      columnId,
-    );
 
     // on view column update, delete any optimised single query cache
     {
